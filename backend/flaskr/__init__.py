@@ -140,16 +140,16 @@ def create_app(test_config=None):
         req = request.get_json()
 
         try:
-            new_question = req["question"]
-            new_question_answer = req["answer"]
-            new_question_difficulty = req["difficulty"]
-            new_question_category = req["category"]
+            current_round_question = req["question"]
+            current_round_question_answer = req["answer"]
+            current_round_question_difficulty = req["difficulty"]
+            current_round_question_category = req["category"]
 
             question = Question(
-                question=new_question,
-                answer=new_question_answer,
-                difficulty=new_question_difficulty,
-                category=new_question_category,
+                question=current_round_question,
+                answer=current_round_question_answer,
+                difficulty=current_round_question_difficulty,
+                category=current_round_question_category,
             )
 
             question.insert()
@@ -255,32 +255,30 @@ def create_app(test_config=None):
     def play_quiz():
         try:
             req = request.get_json()
-            quiz_category = req["quiz_category"]
+            quiz_category = req["category"]
             played_questions = req["previous_question"]
 
             played_question_ids = [question.get("id") for question in played_questions]
             category_type = quiz_category.get("type")
 
             if category_type:
-                available_questions = Question.query.filter(
+                questions_to_play = Question.query.filter(
                     Question.id.notin_(
                         (played_question_ids), Question.category == category_type
                     )
                 ).all()
             else:
-                available_questions = Question.query.filter(
+                questions_to_play = Question.query.filter(
                     Question.id.notin_((played_question_ids))
                 ).all()
 
-            new_question = (
-                available_questions[
-                    random.randrange(0, len(available_questions))
-                ].format()
-                if len(available_questions) > 0
+            current_round_question = (
+                random.choice(questions_to_play).format()
+                if len(questions_to_play) > 0
                 else None
             )
 
-            return jsonify({"success": True, "question": new_question})
+            return jsonify({"success": True, "question": current_round_question})
         except:
             abort(422)
 
